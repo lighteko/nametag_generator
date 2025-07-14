@@ -112,6 +112,14 @@ const generateNametagImage = async (
 
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
+  
+  // Test if text rendering works by drawing a colored rectangle where text should be
+  const testMode = false; // Set to true to see text positioning
+  if (testMode) {
+    ctx.fillStyle = '#ff0000'; // Red color for testing
+    ctx.fillRect(centerX - 50, centerY - 25, 100, 50);
+    ctx.fillStyle = '#000000'; // Reset to black for text
+  }
 
   // Check if church field is empty to adjust layout
   const hasChurch = person.교회 && person.교회.trim() !== '';
@@ -159,7 +167,8 @@ const generateNametagImage = async (
   ctx.fillText(person['나이/학년/직책'], centerX, detailY);
 }
 
-return await canvas.encode('png');
+// Encode with compression to reduce file size
+return await canvas.encode('png', { compressionLevel: 6, filters: canvas.PNG_FILTER_NONE });
 };
 
 const generateArrangedA4Pages = async (
@@ -486,7 +495,8 @@ const generateArrangedPages = async (
               }
     }
   
-  pages.push(await canvas.encode('png'));
+  // Encode with compression to reduce file size
+  pages.push(await canvas.encode('png', { compressionLevel: 6, filters: canvas.PNG_FILTER_NONE }));
   processedNametags += placements.length;
   }
   
@@ -637,18 +647,42 @@ export default async function handler(
       }
     }
 
-    debugLog('Step 9: Generating ZIP buffer');
-    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
-    debugLog('Step 9 success: ZIP buffer generated', { size: zipBuffer.length });
+    debugLog('Step 9: Generating ZIP stream');
     
     debugLog('Step 10: Setting response headers');
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename="LFC_nametags.zip"');
-    res.setHeader('Content-Length', zipBuffer.length);
+    res.setHeader('Transfer-Encoding', 'chunked');
     
-    debugLog('Step 11: Sending ZIP file');
-    res.send(zipBuffer);
-    debugLog('=== API SUCCESS ===', { finalSize: zipBuffer.length });
+    debugLog('Step 11: Streaming ZIP file');
+    
+    // Generate ZIP as stream to avoid memory issues
+    const zipStream = zip.generateNodeStream({
+      type: 'nodebuffer',
+      streamFiles: true,
+      compression: 'DEFLATE',
+      compressionOptions: {
+        level: 6 // Balanced compression
+      }
+    });
+    
+    let totalSize = 0;
+    zipStream.on('data', (chunk) => {
+      totalSize += chunk.length;
+      res.write(chunk);
+    });
+    
+    zipStream.on('end', () => {
+      res.end();
+      debugLog('=== API SUCCESS ===', { finalSize: totalSize });
+    });
+    
+    zipStream.on('error', (streamError) => {
+      debugLog('Stream error', { error: streamError.message });
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Stream error' });
+      }
+    });
     
   } catch (error) {
     debugLog('=== API FAILED ===', {
@@ -658,11 +692,18 @@ export default async function handler(
     });
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ 
-      error: 'Failed to generate nametags',
-      details: errorMessage,
-      timestamp: new Date().toISOString(),
-      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
-    });
+    
+    // Only send error response if headers haven't been sent yet
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Failed to generate nametags',
+        details: errorMessage,
+        timestamp: new Date().toISOString(),
+        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
+      });
+    } else {
+      // If we're in the middle of streaming, just end the response
+      res.end();
+    }
   }
 } 
