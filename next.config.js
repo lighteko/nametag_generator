@@ -2,7 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   webpack: (config) => {
-    config.resolve.alias.canvas = false;
+    // Configure for @napi-rs/canvas compatibility
+    config.externals = config.externals || [];
+    config.externals.push({
+      '@napi-rs/canvas': '@napi-rs/canvas',
+    });
     return config;
   },
 }

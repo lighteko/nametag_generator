@@ -5,6 +5,9 @@
     },
     "pages/api/test-canvas.ts": {
       "maxDuration": 10
+    },
+    "pages/api/test-simple.ts": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
