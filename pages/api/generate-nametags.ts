@@ -112,7 +112,7 @@ const generateNametagImage = async (
     ctx.fillText(person['나이/학년/직책'], centerX, detailY);
   }
 
-  return canvas.toBuffer('image/png');
+  return canvas.encode('png');
 };
 
 const generateArrangedA4Pages = async (
@@ -439,7 +439,7 @@ const generateArrangedPages = async (
         }
       }
     
-    pages.push(canvas.toBuffer('image/png'));
+    pages.push(canvas.encode('png'));
     processedNametags += placements.length;
   }
   
@@ -462,6 +462,17 @@ export default async function handler(
 
   try {
     console.log('Processing request body...');
+    console.log('Canvas module loaded successfully');
+    
+    // Test canvas creation early
+    try {
+      const testCanvas = createCanvas(100, 100);
+      console.log('Test canvas created successfully');
+    } catch (canvasError) {
+      console.error('Canvas creation failed:', canvasError);
+      throw new Error(`Canvas initialization failed: ${canvasError instanceof Error ? canvasError.message : String(canvasError)}`);
+    }
+    
     const { personData, bigNametagFiles, smallNametagFiles, useArrangedLayout, studentWidthMm, nonStudentWidthMm } = req.body;
     
     console.log('Person data:', personData.length, 'people');
@@ -549,6 +560,14 @@ export default async function handler(
     
   } catch (error) {
     console.error('Error generating nametags:', error);
-    res.status(500).json({ error: 'Failed to generate nametags' });
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Error message:', error instanceof Error ? error.message : String(error));
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ 
+      error: 'Failed to generate nametags',
+      details: errorMessage,
+      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
+    });
   }
 } 
