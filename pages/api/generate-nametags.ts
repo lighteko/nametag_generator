@@ -36,7 +36,7 @@ try {
 }
 
 // Check available fonts in the system
-console.log('Available system fonts:', GlobalFonts.families());
+console.log('Available system fonts:', GlobalFonts.families);
 
 // Test if we can create a basic canvas and draw Korean text
 (async () => {
