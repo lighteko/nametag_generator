@@ -617,7 +617,7 @@ export default async function handler(
     
     debugLog('Step 10: Setting response headers');
     res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', 'attachment; filename="LFC_nametags.zip"; filename*=UTF-8\'\'LFC_%EA%B5%90%EC%9C%A1_%EC%84%A0%EA%B5%90_%EC%9D%B4%EB%A6%84%ED%91%9C.zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="LFC_nametags.zip"');
     res.setHeader('Content-Length', zipBuffer.length);
     
     debugLog('Step 11: Sending ZIP file');
