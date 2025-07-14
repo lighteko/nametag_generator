@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+// @ts-ignore
 import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import JSZip from 'jszip';
 import fs from 'fs';
@@ -107,12 +108,12 @@ const generateNametagImage = async (
 
     // Draw age/grade/position (나이/학년/직책) - different gaps for students vs non-students
     ctx.font = `${detailFontSize}px ${koreanFont}`;
-    // Small (students): smaller gap and higher, Big (non-students): bigger gap
-    const detailY = isSmall ? centerY + 80 : centerY + 240;
-    ctx.fillText(person['나이/학년/직책'], centerX, detailY);
-  }
+      // Small (students): smaller gap and higher, Big (non-students): bigger gap
+  const detailY = isSmall ? centerY + 80 : centerY + 240;
+  ctx.fillText(person['나이/학년/직책'], centerX, detailY);
+}
 
-  return canvas.encode('png');
+return await canvas.encode('png');
 };
 
 const generateArrangedA4Pages = async (
@@ -436,11 +437,11 @@ const generateArrangedPages = async (
           } else {
             ctx.drawImage(blankImage, imageX, imageY, imageWidth, imageHeight);
           }
-        }
-      }
-    
-    pages.push(canvas.encode('png'));
-    processedNametags += placements.length;
+              }
+    }
+  
+  pages.push(await canvas.encode('png'));
+  processedNametags += placements.length;
   }
   
   return pages;
