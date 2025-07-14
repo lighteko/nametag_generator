@@ -446,6 +446,58 @@
   text-align: right;
 }
 
+.exampleImages {
+  margin-top: 15px;
+}
+
+.exampleSection {
+  margin-bottom: 25px;
+}
+
+.exampleSection:last-child {
+  margin-bottom: 0;
+}
+
+.exampleSection h4 {
+  color: #495057;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #17a2b8;
+  padding-bottom: 5px;
+}
+
+.exampleGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.exampleItem {
+  text-align: center;
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.exampleImage {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  margin-bottom: 10px;
+}
+
+.exampleItem p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .uploadSection {
     flex-direction: column;
@@ -491,5 +543,22 @@
   .excelHeader span,
   .excelRow span {
     padding: 8px 4px;
+  }
+
+  .exampleGrid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .exampleSection h4 {
+    font-size: 1rem;
+  }
+
+  .exampleImage {
+    max-height: 200px;
+  }
+
+  .exampleItem {
+    padding: 12px;
   }
 } 

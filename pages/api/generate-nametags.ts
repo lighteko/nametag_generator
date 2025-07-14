@@ -5,54 +5,17 @@ import JSZip from 'jszip';
 import fs from 'fs';
 import path from 'path';
 
-// Register Korean font if available - safer approach for serverless
+// Register Korean font if available
 let koreanFontAvailable = false;
 try {
-  // Try to register a Korean font - this will work if the font file exists
-  // You can download Noto Sans KR and place it in public/fonts/ directory
   const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansKR-Regular.ttf');
-  console.log('Trying to load font from:', fontPath);
-  
   if (fs.existsSync(fontPath)) {
     GlobalFonts.registerFromPath(fontPath, 'Noto Sans KR');
     koreanFontAvailable = true;
-    console.log('Korean font registered successfully');
-  } else {
-    console.log('Korean font file not found at:', fontPath);
-    try {
-      const fontsDir = path.join(process.cwd(), 'public', 'fonts');
-      if (fs.existsSync(fontsDir)) {
-        console.log('Available files in public/fonts:', fs.readdirSync(fontsDir).join(', '));
-      } else {
-        console.log('public/fonts directory does not exist');
-      }
-    } catch (dirError) {
-      console.log('Could not read fonts directory:', dirError);
-    }
   }
 } catch (error) {
-  console.log('Korean font registration failed:', error);
   koreanFontAvailable = false;
 }
-
-// Check available fonts in the system
-console.log('Available system fonts:', GlobalFonts.families);
-
-// Test if we can create a basic canvas and draw Korean text
-(async () => {
-  try {
-    console.log('Testing Korean text rendering...');
-    const testCanvas = createCanvas(200, 100);
-    const testCtx = testCanvas.getContext('2d');
-    testCtx.font = '24px Arial';
-    testCtx.fillStyle = '#000000';
-    testCtx.fillText('한글 테스트', 10, 50);
-    const testBuffer = await testCanvas.encode('png');
-    console.log('Korean text test successful, buffer size:', testBuffer.length);
-  } catch (testError) {
-    console.log('Korean text test failed:', testError);
-  }
-})();
 
 export const config = {
   api: {
@@ -92,15 +55,11 @@ const generateNametagImage = async (
   const churchFontSize = isSmall ? 44 : 64; // Small: slightly smaller, Big: same
   const detailFontSize = isSmall ? 60 : 120; // Small: bigger but reasonable, Big: larger but contained
   
-  console.log(`Font sizes for ${person.성명} (${isSmall ? 'small' : 'big'}): name=${fontSize}, church=${churchFontSize}, detail=${detailFontSize}`);
-  
   // Use Korean-compatible fonts with comprehensive fallbacks
   // Use Korean font if available, otherwise fall back to system fonts
   const koreanFont = koreanFontAvailable 
     ? '"Noto Sans KR", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans CJK KR", "Dotum", "돋움", "Gulim", "굴림", "Batang", "바탕", sans-serif'
     : '"Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans CJK KR", "Dotum", "돋움", "Gulim", "굴림", "Batang", "바탕", Arial, sans-serif';
-  
-  console.log(`Using font: ${koreanFont} (Korean font available: ${koreanFontAvailable})`);
   
   // Set text properties with Korean support
   ctx.fillStyle = '#000000';
@@ -113,14 +72,6 @@ const generateNametagImage = async (
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
   
-  // Test if text rendering works by drawing a colored rectangle where text should be
-  const testMode = false; // Set to true to see text positioning
-  if (testMode) {
-    ctx.fillStyle = '#ff0000'; // Red color for testing
-    ctx.fillRect(centerX - 50, centerY - 25, 100, 50);
-    ctx.fillStyle = '#000000'; // Reset to black for text
-  }
-
   // Check if church field is empty to adjust layout
   const hasChurch = person.교회 && person.교회.trim() !== '';
 
@@ -131,23 +82,20 @@ const generateNametagImage = async (
     ctx.textAlign = 'left'; // Align to left for church
     // Small: left margin, Big: slightly more right and higher
     const leftMargin = isSmall ? canvas.width * 0.1 : canvas.width * 0.15; // 10% vs 15% from left
-    const churchY = isSmall ? centerY - 60 : centerY - 150; // Big: higher position
-    console.log(`Drawing church text: "${person.교회}" at position (${leftMargin}, ${churchY})`);
+    const churchY = isSmall ? centerY - 60 : centerY - 160; // Big: higher position
     ctx.fillText(person.교회, leftMargin, churchY);
 
     // Draw name (성명) - centered, positioned much lower
     ctx.font = `bold ${fontSize}px ${koreanFont}`;
     ctx.textAlign = 'center'; // Back to center for name
     // Small: higher position, Big: much lower
-    const nameY = isSmall ? centerY + 20 : centerY + 80;
-    console.log(`Drawing name text: "${person.성명}" at position (${centerX}, ${nameY})`);
+    const nameY = isSmall ? centerY + 20 : centerY + 40;
     ctx.fillText(person.성명, centerX, nameY);
 
     // Draw age/grade/position (나이/학년/직책) - different gaps for students vs non-students
     ctx.font = `${detailFontSize}px ${koreanFont}`;
     // Small (students): smaller gap and higher, Big (non-students): bigger gap
-    const detailY = isSmall ? centerY + 120 : centerY + 280;
-    console.log(`Drawing detail text: "${person['나이/학년/직책']}" at position (${centerX}, ${detailY})`);
+    const detailY = isSmall ? centerY + 120 : centerY + 200;
     ctx.fillText(person['나이/학년/직책'], centerX, detailY);
   } else {
     // Layout without church field - center the content better
@@ -155,15 +103,13 @@ const generateNametagImage = async (
     ctx.font = `bold ${fontSize}px ${koreanFont}`;
     ctx.textAlign = 'center';
     // Small: higher position, Big: much lower
-    const nameY = isSmall ? centerY - 20 : centerY + 40;
-    console.log(`Drawing name text (no church): "${person.성명}" at position (${centerX}, ${nameY})`);
+    const nameY = isSmall ? centerY - 20 : centerY + 10;
     ctx.fillText(person.성명, centerX, nameY);
 
     // Draw age/grade/position (나이/학년/직책) - different gaps for students vs non-students
     ctx.font = `${detailFontSize}px ${koreanFont}`;
       // Small (students): smaller gap and higher, Big (non-students): bigger gap
-  const detailY = isSmall ? centerY + 80 : centerY + 240;
-  console.log(`Drawing detail text (no church): "${person['나이/학년/직책']}" at position (${centerX}, ${detailY})`);
+  const detailY = isSmall ? centerY + 80 : centerY + 170;
   ctx.fillText(person['나이/학년/직책'], centerX, detailY);
 }
 
@@ -210,8 +156,6 @@ const generateArrangedA4Pages = async (
     const studentCols = Math.floor(availableWidth / (studentWidthPx + gridSpacing));
     const studentRows = Math.floor(availableHeight / (studentHeightPx + gridSpacing));
     
-    console.log(`Student layout: ${studentCols} cols x ${studentRows} rows, nametag size: ${studentWidthPx}x${studentHeightPx}px (aspect ratio: ${smallImageAspectRatio.toFixed(2)})`);
-    
     const studentPages = await generateArrangedPages(
       students, 
       smallNametagFiles, 
@@ -240,8 +184,6 @@ const generateArrangedA4Pages = async (
     
     const nonStudentCols = Math.floor(availableWidth / (nonStudentWidthPx + gridSpacing));
     const nonStudentRows = Math.floor(availableHeight / (nonStudentHeightPx + gridSpacing));
-    
-    console.log(`Non-student layout: ${nonStudentCols} cols x ${nonStudentRows} rows, nametag size: ${nonStudentWidthPx}x${nonStudentHeightPx}px (aspect ratio: ${bigImageAspectRatio.toFixed(2)})`);
     
     const nonStudentPages = await generateArrangedPages(
       nonStudents, 
@@ -386,8 +328,6 @@ const generateArrangedPages = async (
       placements.push(fallbackPlacement);
     }
     
-    console.log(`Page ${Math.floor(processedNametags / (cols * rows)) + 1}: Placed ${placements.length} nametags using optimized packing`);
-    
     const canvas = createCanvas(pageWidth, pageHeight);
     const ctx = canvas.getContext('2d');
     
@@ -505,78 +445,29 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const debugLog = (step: string, data?: any) => {
-    console.log(`[DEBUG ${Date.now()}] ${step}`, data ? JSON.stringify(data, null, 2) : '');
-  };
-
-  debugLog('=== API CALL START ===', { method: req.method, url: req.url });
-  
   if (req.method === 'GET') {
-    debugLog('GET request - returning success');
     return res.status(200).json({ message: 'API is working' });
   }
   
   if (req.method !== 'POST') {
-    debugLog('Invalid method', { method: req.method });
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    debugLog('Step 1: Starting POST request processing');
     
-    // Canvas module test
-    debugLog('Step 2: Testing canvas module import');
-    try {
-      debugLog('Step 2a: Attempting to create test canvas');
-      const testCanvas = createCanvas(100, 100);
-      debugLog('Step 2b: Canvas created, getting context');
-      const testCtx = testCanvas.getContext('2d');
-      debugLog('Step 2c: Context obtained, testing basic drawing');
-      testCtx.fillStyle = 'red';
-      testCtx.fillRect(0, 0, 50, 50);
-      debugLog('Step 2d: Drawing successful, testing encoding');
-      const testBuffer = await testCanvas.encode('png');
-      debugLog('Step 2e: Encoding successful', { bufferSize: testBuffer.length });
-    } catch (canvasError) {
-      debugLog('Step 2 FAILED: Canvas error', {
-        error: canvasError instanceof Error ? canvasError.message : String(canvasError),
-        name: canvasError instanceof Error ? canvasError.name : 'Unknown',
-        stack: canvasError instanceof Error ? canvasError.stack?.split('\n').slice(0, 5) : 'No stack'
-      });
-      throw new Error(`Canvas initialization failed: ${canvasError instanceof Error ? canvasError.message : String(canvasError)}`);
-    }
-    
-    debugLog('Step 3: Extracting request data');
     const { personData, bigNametagFiles, smallNametagFiles, useArrangedLayout, studentWidthMm, nonStudentWidthMm } = req.body;
     
-    debugLog('Step 3 result: Data extracted', {
-      personCount: personData?.length || 0,
-      bigFiles: bigNametagFiles?.length || 0,
-      smallFiles: smallNametagFiles?.length || 0,
-      useArrangedLayout,
-      studentWidthMm,
-      nonStudentWidthMm
-    });
-
-    debugLog('Step 4: Validating input data');
     if (!personData || !Array.isArray(personData) || personData.length === 0) {
-      debugLog('Step 4 FAILED: No person data', { personData: typeof personData, isArray: Array.isArray(personData) });
       throw new Error('No person data provided');
     }
 
     if (!bigNametagFiles || !smallNametagFiles || bigNametagFiles.length === 0 || smallNametagFiles.length === 0) {
-      debugLog('Step 4 FAILED: No template files', { 
-        bigFiles: bigNametagFiles?.length || 0, 
-        smallFiles: smallNametagFiles?.length || 0 
-      });
       throw new Error('No nametag template files provided');
     }
 
-    debugLog('Step 5: Creating ZIP file');
     const zip = new JSZip();
     
     if (useArrangedLayout) {
-      debugLog('Step 6: Generating arranged A4 pages');
       try {
         const pages = await generateArrangedA4Pages(
           personData,
@@ -586,73 +477,48 @@ export default async function handler(
           nonStudentWidthMm
         );
         
-        debugLog('Step 6 success: A4 pages generated', { pageCount: pages.length });
-        
-        // Add pages to ZIP
-        debugLog('Step 7: Adding A4 pages to ZIP');
         pages.forEach((pageBuffer, index) => {
           const filename = `A4_Page_${index + 1}.png`;
           zip.file(filename, new Uint8Array(pageBuffer));
         });
-        debugLog('Step 7 success: A4 pages added to ZIP', { pageCount: pages.length });
         
       } catch (a4Error) {
-        debugLog('Step 6 FAILED: A4 generation error', {
-          error: a4Error instanceof Error ? a4Error.message : String(a4Error),
-          stack: a4Error instanceof Error ? a4Error.stack?.split('\n').slice(0, 3) : 'No stack'
-        });
         throw a4Error;
       }
       
     } else {
-      debugLog('Step 8: Generating individual files');
       let processedCount = 0;
       
       for (const person of personData) {
-        debugLog(`Step 8.${processedCount + 1}: Processing person`, { name: person.성명 });
         const isStudent = person['학생 여부'] === 'T';
         const nametagFiles = isStudent ? smallNametagFiles : bigNametagFiles;
         
         if (nametagFiles.length === 0) {
-          debugLog(`Step 8.${processedCount + 1} WARNING: No template files`, { 
-            person: person.성명, 
-            isStudent, 
-            type: isStudent ? 'small' : 'big' 
-          });
           continue;
         }
         
         // Randomly select a background image
         const randomIndex = Math.floor(Math.random() * nametagFiles.length);
         const selectedFile = nametagFiles[randomIndex];
-        console.log(`Selected file for ${person.성명}`);
         
         // Generate nametag image
-        console.log(`Generating nametag for ${person.성명}...`);
         const imageBuffer = base64ToBuffer(selectedFile.data);
         const nametagBuffer = await generateNametagImage(
           person,
           imageBuffer,
           isStudent
         );
-        console.log(`Nametag generated for ${person.성명}`);
         
         // Add to ZIP with filename
         const churchPart = person.교회 && person.교회.trim() !== '' ? `_${person.교회}` : '';
         const filename = `${person.성명}${churchPart}_${isStudent ? 'small' : 'big'}.png`;
         zip.file(filename, new Uint8Array(nametagBuffer));
-        console.log(`Added ${filename} to ZIP`);
       }
     }
 
-    debugLog('Step 9: Generating ZIP stream');
-    
-    debugLog('Step 10: Setting response headers');
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename="LFC_nametags.zip"');
     res.setHeader('Transfer-Encoding', 'chunked');
-    
-    debugLog('Step 11: Streaming ZIP file');
     
     // Generate ZIP as stream to avoid memory issues
     const zipStream = zip.generateNodeStream({
@@ -672,36 +538,26 @@ export default async function handler(
     
     zipStream.on('end', () => {
       res.end();
-      debugLog('=== API SUCCESS ===', { finalSize: totalSize });
     });
     
     zipStream.on('error', (streamError) => {
-      debugLog('Stream error', { error: streamError.message });
       if (!res.headersSent) {
         res.status(500).json({ error: 'Stream error' });
       }
     });
     
-  } catch (error) {
-    debugLog('=== API FAILED ===', {
-      error: error instanceof Error ? error.message : String(error),
-      name: error instanceof Error ? error.name : 'Unknown',
-      stack: error instanceof Error ? error.stack?.split('\n').slice(0, 10) : 'No stack'
-    });
-    
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    // Only send error response if headers haven't been sent yet
-    if (!res.headersSent) {
-      res.status(500).json({ 
-        error: 'Failed to generate nametags',
-        details: errorMessage,
-        timestamp: new Date().toISOString(),
-        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
-      });
-    } else {
-      // If we're in the middle of streaming, just end the response
-      res.end();
+      } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Only send error response if headers haven't been sent yet
+      if (!res.headersSent) {
+        res.status(500).json({ 
+          error: 'Failed to generate nametags',
+          details: errorMessage
+        });
+      } else {
+        // If we're in the middle of streaming, just end the response
+        res.end();
+      }
     }
-  }
 } 
