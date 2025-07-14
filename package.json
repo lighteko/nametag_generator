@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "canvas": "2.11.2",
+    "@napi-rs/canvas": "^0.1.44",
     "file-saver": "2.0.5",
     "formidable": "3.5.1",
     "jszip": "3.10.1",

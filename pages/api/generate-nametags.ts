@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createCanvas, loadImage, registerFont } from 'canvas';
+import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import JSZip from 'jszip';
 import fs from 'fs';
 import path from 'path';
@@ -10,7 +10,7 @@ try {
   // You can download Noto Sans KR and place it in public/fonts/ directory
   const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansKR-Regular.ttf');
   if (fs.existsSync(fontPath)) {
-    registerFont(fontPath, { family: 'Noto Sans KR' });
+    GlobalFonts.registerFromPath(fontPath, 'Noto Sans KR');
     console.log('Korean font registered successfully');
   }
 } catch (error) {
