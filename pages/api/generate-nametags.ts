@@ -167,8 +167,7 @@ const generateNametagImage = async (
   ctx.fillText(person['나이/학년/직책'], centerX, detailY);
 }
 
-// Encode with compression to reduce file size
-return await canvas.encode('png', { compressionLevel: 6, filters: canvas.PNG_FILTER_NONE });
+return await canvas.encode('png');
 };
 
 const generateArrangedA4Pages = async (
@@ -495,8 +494,7 @@ const generateArrangedPages = async (
               }
     }
   
-  // Encode with compression to reduce file size
-  pages.push(await canvas.encode('png', { compressionLevel: 6, filters: canvas.PNG_FILTER_NONE }));
+  pages.push(await canvas.encode('png'));
   processedNametags += placements.length;
   }
   
