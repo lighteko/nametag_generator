@@ -471,79 +471,120 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  console.log('API called with method:', req.method);
+  const debugLog = (step: string, data?: any) => {
+    console.log(`[DEBUG ${Date.now()}] ${step}`, data ? JSON.stringify(data, null, 2) : '');
+  };
+
+  debugLog('=== API CALL START ===', { method: req.method, url: req.url });
   
   if (req.method === 'GET') {
+    debugLog('GET request - returning success');
     return res.status(200).json({ message: 'API is working' });
   }
   
   if (req.method !== 'POST') {
+    debugLog('Invalid method', { method: req.method });
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    console.log('Processing request body...');
-    console.log('Canvas module loaded successfully');
+    debugLog('Step 1: Starting POST request processing');
     
-    // Test canvas creation early with detailed logging
+    // Canvas module test
+    debugLog('Step 2: Testing canvas module import');
     try {
-      console.log('Attempting to create test canvas...');
+      debugLog('Step 2a: Attempting to create test canvas');
       const testCanvas = createCanvas(100, 100);
-      console.log('Test canvas created successfully, testing context...');
+      debugLog('Step 2b: Canvas created, getting context');
       const testCtx = testCanvas.getContext('2d');
-      console.log('Context created successfully, testing encoding...');
-      await testCanvas.encode('png');
-      console.log('Canvas encoding test successful');
+      debugLog('Step 2c: Context obtained, testing basic drawing');
+      testCtx.fillStyle = 'red';
+      testCtx.fillRect(0, 0, 50, 50);
+      debugLog('Step 2d: Drawing successful, testing encoding');
+      const testBuffer = await testCanvas.encode('png');
+      debugLog('Step 2e: Encoding successful', { bufferSize: testBuffer.length });
     } catch (canvasError) {
-      console.error('Canvas creation failed:', canvasError);
-      console.error('Canvas error name:', canvasError instanceof Error ? canvasError.name : 'Unknown');
-      console.error('Canvas error stack:', canvasError instanceof Error ? canvasError.stack : 'No stack');
+      debugLog('Step 2 FAILED: Canvas error', {
+        error: canvasError instanceof Error ? canvasError.message : String(canvasError),
+        name: canvasError instanceof Error ? canvasError.name : 'Unknown',
+        stack: canvasError instanceof Error ? canvasError.stack?.split('\n').slice(0, 5) : 'No stack'
+      });
       throw new Error(`Canvas initialization failed: ${canvasError instanceof Error ? canvasError.message : String(canvasError)}`);
     }
     
+    debugLog('Step 3: Extracting request data');
     const { personData, bigNametagFiles, smallNametagFiles, useArrangedLayout, studentWidthMm, nonStudentWidthMm } = req.body;
     
-    console.log('Person data:', personData.length, 'people');
-    console.log('Big nametag files:', bigNametagFiles.length);
-    console.log('Small nametag files:', smallNametagFiles.length);
-    console.log('Use arranged layout:', useArrangedLayout);
-    console.log('Student width (mm):', studentWidthMm);
-    console.log('Non-student width (mm):', nonStudentWidthMm);
+    debugLog('Step 3 result: Data extracted', {
+      personCount: personData?.length || 0,
+      bigFiles: bigNametagFiles?.length || 0,
+      smallFiles: smallNametagFiles?.length || 0,
+      useArrangedLayout,
+      studentWidthMm,
+      nonStudentWidthMm
+    });
 
-    // Create ZIP file
-    console.log('Creating ZIP file...');
+    debugLog('Step 4: Validating input data');
+    if (!personData || !Array.isArray(personData) || personData.length === 0) {
+      debugLog('Step 4 FAILED: No person data', { personData: typeof personData, isArray: Array.isArray(personData) });
+      throw new Error('No person data provided');
+    }
+
+    if (!bigNametagFiles || !smallNametagFiles || bigNametagFiles.length === 0 || smallNametagFiles.length === 0) {
+      debugLog('Step 4 FAILED: No template files', { 
+        bigFiles: bigNametagFiles?.length || 0, 
+        smallFiles: smallNametagFiles?.length || 0 
+      });
+      throw new Error('No nametag template files provided');
+    }
+
+    debugLog('Step 5: Creating ZIP file');
     const zip = new JSZip();
     
     if (useArrangedLayout) {
-      // Generate arranged A4 pages
-      console.log('Generating arranged A4 pages...');
-      const pages = await generateArrangedA4Pages(
-        personData,
-        bigNametagFiles,
-        smallNametagFiles,
-        studentWidthMm,
-        nonStudentWidthMm
-      );
-      
-      console.log(`Generated ${pages.length} A4 pages`);
-      
-      // Add pages to ZIP
-      pages.forEach((pageBuffer, index) => {
-        const filename = `A4_Page_${index + 1}.png`;
-        zip.file(filename, new Uint8Array(pageBuffer));
-        console.log(`Added ${filename} to ZIP`);
-      });
+      debugLog('Step 6: Generating arranged A4 pages');
+      try {
+        const pages = await generateArrangedA4Pages(
+          personData,
+          bigNametagFiles,
+          smallNametagFiles,
+          studentWidthMm,
+          nonStudentWidthMm
+        );
+        
+        debugLog('Step 6 success: A4 pages generated', { pageCount: pages.length });
+        
+        // Add pages to ZIP
+        debugLog('Step 7: Adding A4 pages to ZIP');
+        pages.forEach((pageBuffer, index) => {
+          const filename = `A4_Page_${index + 1}.png`;
+          zip.file(filename, new Uint8Array(pageBuffer));
+        });
+        debugLog('Step 7 success: A4 pages added to ZIP', { pageCount: pages.length });
+        
+      } catch (a4Error) {
+        debugLog('Step 6 FAILED: A4 generation error', {
+          error: a4Error instanceof Error ? a4Error.message : String(a4Error),
+          stack: a4Error instanceof Error ? a4Error.stack?.split('\n').slice(0, 3) : 'No stack'
+        });
+        throw a4Error;
+      }
       
     } else {
-      // Generate individual files
-      console.log('Processing each person...');
+      debugLog('Step 8: Generating individual files');
+      let processedCount = 0;
+      
       for (const person of personData) {
-        console.log(`Processing person: ${person.성명}`);
+        debugLog(`Step 8.${processedCount + 1}: Processing person`, { name: person.성명 });
         const isStudent = person['학생 여부'] === 'T';
         const nametagFiles = isStudent ? smallNametagFiles : bigNametagFiles;
         
         if (nametagFiles.length === 0) {
-          console.warn(`No ${isStudent ? 'small' : 'big'} nametag files available for ${person.성명}`);
+          debugLog(`Step 8.${processedCount + 1} WARNING: No template files`, { 
+            person: person.성명, 
+            isStudent, 
+            type: isStudent ? 'small' : 'big' 
+          });
           continue;
         }
         
@@ -570,31 +611,31 @@ export default async function handler(
       }
     }
 
-    // Generate ZIP buffer
-    console.log('Generating ZIP buffer...');
+    debugLog('Step 9: Generating ZIP buffer');
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
-    console.log('ZIP buffer generated, size:', zipBuffer.length);
+    debugLog('Step 9 success: ZIP buffer generated', { size: zipBuffer.length });
     
-    // Set response headers
-    console.log('Setting response headers...');
+    debugLog('Step 10: Setting response headers');
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename="LFC_교육_선교_이름표.zip"');
     res.setHeader('Content-Length', zipBuffer.length);
     
-    // Send ZIP file
-    console.log('Sending ZIP file...');
+    debugLog('Step 11: Sending ZIP file');
     res.send(zipBuffer);
-    console.log('ZIP file sent successfully');
+    debugLog('=== API SUCCESS ===', { finalSize: zipBuffer.length });
     
   } catch (error) {
-    console.error('Error generating nametags:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    console.error('Error message:', error instanceof Error ? error.message : String(error));
+    debugLog('=== API FAILED ===', {
+      error: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack?.split('\n').slice(0, 10) : 'No stack'
+    });
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({ 
       error: 'Failed to generate nametags',
       details: errorMessage,
+      timestamp: new Date().toISOString(),
       stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
     });
   }
