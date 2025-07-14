@@ -1,7 +1,10 @@
 {
   "functions": {
-    "pages/api/generate-nametags.js": {
+    "pages/api/generate-nametags.ts": {
       "maxDuration": 30
+    },
+    "pages/api/test-canvas.ts": {
+      "maxDuration": 10
     }
   },
   "rewrites": [

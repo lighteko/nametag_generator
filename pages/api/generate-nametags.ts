@@ -5,17 +5,34 @@ import JSZip from 'jszip';
 import fs from 'fs';
 import path from 'path';
 
-// Register Korean font if available
+// Register Korean font if available - safer approach for serverless
+let koreanFontAvailable = false;
 try {
   // Try to register a Korean font - this will work if the font file exists
   // You can download Noto Sans KR and place it in public/fonts/ directory
   const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansKR-Regular.ttf');
+  console.log('Trying to load font from:', fontPath);
+  
   if (fs.existsSync(fontPath)) {
     GlobalFonts.registerFromPath(fontPath, 'Noto Sans KR');
+    koreanFontAvailable = true;
     console.log('Korean font registered successfully');
+  } else {
+    console.log('Korean font file not found at:', fontPath);
+    try {
+      const fontsDir = path.join(process.cwd(), 'public', 'fonts');
+      if (fs.existsSync(fontsDir)) {
+        console.log('Available files in public/fonts:', fs.readdirSync(fontsDir).join(', '));
+      } else {
+        console.log('public/fonts directory does not exist');
+      }
+    } catch (dirError) {
+      console.log('Could not read fonts directory:', dirError);
+    }
   }
 } catch (error) {
-  console.log('Korean font not found, using system fonts');
+  console.log('Korean font registration failed:', error);
+  koreanFontAvailable = false;
 }
 
 export const config = {
@@ -59,7 +76,10 @@ const generateNametagImage = async (
   console.log(`Font sizes for ${person.성명} (${isSmall ? 'small' : 'big'}): name=${fontSize}, church=${churchFontSize}, detail=${detailFontSize}`);
   
   // Use Korean-compatible fonts with comprehensive fallbacks
-  const koreanFont = '"Noto Sans KR", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans CJK KR", "Dotum", "돋움", "Gulim", "굴림", "Batang", "바탕", sans-serif';
+  // Use Korean font if available, otherwise fall back to system fonts
+  const koreanFont = koreanFontAvailable 
+    ? '"Noto Sans KR", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans CJK KR", "Dotum", "돋움", "Gulim", "굴림", "Batang", "바탕", sans-serif'
+    : '"Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans CJK KR", "Dotum", "돋움", "Gulim", "굴림", "Batang", "바탕", Arial, sans-serif';
   
   // Set text properties with Korean support
   ctx.fillStyle = '#000000';
