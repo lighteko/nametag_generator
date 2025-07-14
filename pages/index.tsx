@@ -222,7 +222,13 @@ export default function Home() {
       if (progressInterval) clearInterval(progressInterval);
 
       if (!response.ok) {
-        throw new Error('Failed to generate nametags');
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: 'Unknown error', details: `HTTP ${response.status}` };
+        }
+        throw new Error(`API Error: ${errorData.details || errorData.error || 'Unknown error'}`);
       }
 
       setProgress(97);

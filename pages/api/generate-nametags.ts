@@ -485,12 +485,19 @@ export default async function handler(
     console.log('Processing request body...');
     console.log('Canvas module loaded successfully');
     
-    // Test canvas creation early
+    // Test canvas creation early with detailed logging
     try {
+      console.log('Attempting to create test canvas...');
       const testCanvas = createCanvas(100, 100);
-      console.log('Test canvas created successfully');
+      console.log('Test canvas created successfully, testing context...');
+      const testCtx = testCanvas.getContext('2d');
+      console.log('Context created successfully, testing encoding...');
+      await testCanvas.encode('png');
+      console.log('Canvas encoding test successful');
     } catch (canvasError) {
       console.error('Canvas creation failed:', canvasError);
+      console.error('Canvas error name:', canvasError instanceof Error ? canvasError.name : 'Unknown');
+      console.error('Canvas error stack:', canvasError instanceof Error ? canvasError.stack : 'No stack');
       throw new Error(`Canvas initialization failed: ${canvasError instanceof Error ? canvasError.message : String(canvasError)}`);
     }
     
