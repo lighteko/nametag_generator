@@ -35,6 +35,25 @@ try {
   koreanFontAvailable = false;
 }
 
+// Check available fonts in the system
+console.log('Available system fonts:', GlobalFonts.families());
+
+// Test if we can create a basic canvas and draw Korean text
+(async () => {
+  try {
+    console.log('Testing Korean text rendering...');
+    const testCanvas = createCanvas(200, 100);
+    const testCtx = testCanvas.getContext('2d');
+    testCtx.font = '24px Arial';
+    testCtx.fillStyle = '#000000';
+    testCtx.fillText('한글 테스트', 10, 50);
+    const testBuffer = await testCanvas.encode('png');
+    console.log('Korean text test successful, buffer size:', testBuffer.length);
+  } catch (testError) {
+    console.log('Korean text test failed:', testError);
+  }
+})();
+
 export const config = {
   api: {
     bodyParser: {
@@ -81,6 +100,8 @@ const generateNametagImage = async (
     ? '"Noto Sans KR", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans CJK KR", "Dotum", "돋움", "Gulim", "굴림", "Batang", "바탕", sans-serif'
     : '"Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans CJK KR", "Dotum", "돋움", "Gulim", "굴림", "Batang", "바탕", Arial, sans-serif';
   
+  console.log(`Using font: ${koreanFont} (Korean font available: ${koreanFontAvailable})`);
+  
   // Set text properties with Korean support
   ctx.fillStyle = '#000000';
   ctx.textAlign = 'center';
@@ -103,6 +124,7 @@ const generateNametagImage = async (
     // Small: left margin, Big: slightly more right and higher
     const leftMargin = isSmall ? canvas.width * 0.1 : canvas.width * 0.15; // 10% vs 15% from left
     const churchY = isSmall ? centerY - 60 : centerY - 150; // Big: higher position
+    console.log(`Drawing church text: "${person.교회}" at position (${leftMargin}, ${churchY})`);
     ctx.fillText(person.교회, leftMargin, churchY);
 
     // Draw name (성명) - centered, positioned much lower
@@ -110,12 +132,14 @@ const generateNametagImage = async (
     ctx.textAlign = 'center'; // Back to center for name
     // Small: higher position, Big: much lower
     const nameY = isSmall ? centerY + 20 : centerY + 80;
+    console.log(`Drawing name text: "${person.성명}" at position (${centerX}, ${nameY})`);
     ctx.fillText(person.성명, centerX, nameY);
 
     // Draw age/grade/position (나이/학년/직책) - different gaps for students vs non-students
     ctx.font = `${detailFontSize}px ${koreanFont}`;
     // Small (students): smaller gap and higher, Big (non-students): bigger gap
     const detailY = isSmall ? centerY + 120 : centerY + 280;
+    console.log(`Drawing detail text: "${person['나이/학년/직책']}" at position (${centerX}, ${detailY})`);
     ctx.fillText(person['나이/학년/직책'], centerX, detailY);
   } else {
     // Layout without church field - center the content better
@@ -124,12 +148,14 @@ const generateNametagImage = async (
     ctx.textAlign = 'center';
     // Small: higher position, Big: much lower
     const nameY = isSmall ? centerY - 20 : centerY + 40;
+    console.log(`Drawing name text (no church): "${person.성명}" at position (${centerX}, ${nameY})`);
     ctx.fillText(person.성명, centerX, nameY);
 
     // Draw age/grade/position (나이/학년/직책) - different gaps for students vs non-students
     ctx.font = `${detailFontSize}px ${koreanFont}`;
       // Small (students): smaller gap and higher, Big (non-students): bigger gap
   const detailY = isSmall ? centerY + 80 : centerY + 240;
+  console.log(`Drawing detail text (no church): "${person['나이/학년/직책']}" at position (${centerX}, ${detailY})`);
   ctx.fillText(person['나이/학년/직책'], centerX, detailY);
 }
 
