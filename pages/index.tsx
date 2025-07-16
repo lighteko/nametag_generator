@@ -21,8 +21,8 @@ export default function Home() {
   const [progressText, setProgressText] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [useArrangedLayout, setUseArrangedLayout] = useState(false);
-  const [studentWidthMm, setStudentWidthMm] = useState(85);
-  const [nonStudentWidthMm, setNonStudentWidthMm] = useState(100);
+  const [studentWidthMm, setStudentWidthMm] = useState(83);
+  const [nonStudentWidthMm, setNonStudentWidthMm] = useState(95);
   const [showInstructions, setShowInstructions] = useState(false);
 
   const onBigNametagDrop = useCallback((acceptedFiles: File[]) => {
@@ -550,7 +550,7 @@ export default function Home() {
                   </label>
                 </div>
                 <div className={styles.hint}>
-                  권장: 학생용 85mm, 교사용 100mm
+                  권장: 학생용 83mm, 교사용 95mm
                 </div>
               </div>
             )}
